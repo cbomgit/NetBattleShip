@@ -10,5 +10,5 @@ package com.christian;
  */
 public interface ClientInitListener {
     
-    public void initClient(String serverAddr, int port);
+    public void initClient(String hostName, String serverAddr, int port);
 }

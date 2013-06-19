@@ -7,11 +7,14 @@ package com.christian;
  */
 abstract class Player {
 
-   int  [][] resultsGrid;//keep track of hits/misses/ships sunk
-   int       gridSize; // size of the grid
-   int       shipsActive;
-   Ship []   fleet;//represents users own ships
-   Ship [][] shipGrid;
+   private   Ship [][] shipGrid;
+   private   int       gridSize; // size of the grid
+   
+   private   int       shipsActive;
+   protected Ship []   fleet;//represents users own ships
+   protected int  [][] resultsGrid;//keep track of hits/misses/ships sunk
+   
+   
 
    public static final int ALL_SHIPS_SUNK = -4;
    public static final int SHIP_SUNK = -3;

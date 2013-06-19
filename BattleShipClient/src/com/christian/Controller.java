@@ -22,13 +22,13 @@ class Controller {
     
     //socket and io streams needed to talk to server
     private Socket                  server;
-    private PrintWriter             socketOut;
-    private BufferedReader          socketIn;
+    private PrintWriter             out;
+    private BufferedReader          in;
     private SocketWorker            socketWorker;
     
     private String                  controlFlag;
        
-    private static final String     CLIENT_READY      = "Ready to play";    
+    private static final String     CLIENT_READY      =  "Ready to play";    
     
     private static final String     ATTACK            =  "Attack";
     private static final String     RESULT            =  "Result";
@@ -36,14 +36,14 @@ class Controller {
     private static final String     GOODBYE           =  "Goodbye";
     private static final String     PLAY_AGAIN        =  "Play again?";
     
-    public  static final String     OFFENSE           =  "Offense";
-    public  static final String     DEFENSE           =  "Defense";
+    public  static final String     GO_FIRST          =  "Go first";
+    public  static final String     GO_SECOND         =  "Go second";
     
+    public  static final int        DEFAULT_GRID_SIZE = 11;
     
-    
-    public Controller(String control, Socket socket, GameBoard b, int gridSize){
+    public Controller(String hostName, String control, Socket socket, GameBoard b){
         
-        player = new User(gridSize);
+        player = new User(hostName, DEFAULT_GRID_SIZE);
         board = b;                       
         board.addListenerToShipGrid(new BoardConfigController());
         controlFlag = control;
@@ -51,9 +51,16 @@ class Controller {
         server = socket;
         
         try {
-            socketOut = new PrintWriter(server.getOutputStream(), true);
-            socketIn  = new BufferedReader(
+            out = new PrintWriter(server.getOutputStream(), true);
+            in  = new BufferedReader(
                         new InputStreamReader(server.getInputStream()));
+            
+            //exchange user names 
+            out.println(player.getUserName());
+            String opponent = in.readLine();
+            
+            board.setOpponentName(opponent);
+            board.toConsole(opponent + " wants to play.");
         }
         catch(IOException e) {
             System.out.println("Could not open Socket IO stream");
@@ -81,10 +88,10 @@ class Controller {
                 */
                 
                 board.toggleBoard(false);
-                System.out.println("Sending " + target);
+                
                 //send the guess to the opponent. 
-                socketOut.println(target.x);
-                socketOut.println(target.y);
+                out.println(target.x);
+                out.println(target.y);
                 
                 //the socketinputthread should handle the rest
             }
@@ -125,7 +132,7 @@ class Controller {
                         (new Cell(target.x + 1, target.y), shipSize - 1);
                 player.setVerticalShip(target, whichShip);
                 
-                board.toConsole(Ship.shipName(player.getShipSize(whichShip)));
+                board.toConsole("You set your " + Ship.shipName(player.getShipSize(whichShip)));
                 whichShip++;
                 verticalShipPreviewSet = horizontalShipPreviewSet = false;
                 
@@ -155,11 +162,11 @@ class Controller {
                     board.setMainController(this, new MainGameController());
                     
                     //let the server know we are ready
-                    socketOut.println(CLIENT_READY);
+                    out.println(CLIENT_READY);
                     (socketWorker = new SocketWorker()).execute();
                     
                     
-                    if(controlFlag.equals(DEFENSE)) {
+                    if(controlFlag.equals(GO_SECOND)) {
                         board.toConsole("Waiting for opponent to go first...");
                         board.toggleBoard(false);
                     }
@@ -212,9 +219,13 @@ class Controller {
         private int giveOptionToReconfigureShips(){
 
            Object [] options = {"Go to War!", "Re-deploy"};
-           return JOptionPane.showOptionDialog(null, "Deployment complete?", 
-              "Set-up menu", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, 
-               null, options, null);
+           
+           return JOptionPane.showOptionDialog(null, 
+                                               "Deployment complete?", 
+                                               "Set-up menu", 
+                                               JOptionPane.YES_NO_OPTION, 
+                                               JOptionPane.QUESTION_MESSAGE, 
+                                               null, options, null);
         }
         
     }
@@ -230,36 +241,36 @@ class Controller {
             try {
                 
                 
-                String messageType = socketIn.readLine();
+                String messageType = in.readLine();
                 System.out.println(messageType);
                 
                 if(messageType.equals(ATTACK)) {
                     
-                    Cell target = new Cell(Integer.parseInt(socketIn.readLine()),
-                                           Integer.parseInt(socketIn.readLine()));                    
-                     
-                                                                                        System.out.println("Attacked @ " + target);
-                    
+                    Cell target = new Cell(Integer.parseInt(in.readLine()),
+                                           Integer.parseInt(in.readLine()));                    
+                                         
                     int result = player.opponentGuessedHere(target);
-                                                                                        System.out.println("Sending back result " + result);
                     board.updateShipGrid(result, target);
                     
-                    socketOut.println(result);
-                    
-                    board.toggleBoard(true);
-                    
+                    out.println(result);
+                                        
                     if(result == Player.ALL_SHIPS_SUNK)
                         promptForSecondGame(false);
                 }
                 else if(messageType.equals(RESULT)) {
                     
-                    int result = Integer.parseInt(socketIn.readLine());
-                    Cell target = new Cell(Integer.parseInt(socketIn.readLine()),
-                                           Integer.parseInt(socketIn.readLine()));
-                                                                                        System.out.println("Guess @ " + target.x + ", " + target.y + " returned result " + result);
+                    int result = Integer.parseInt(in.readLine());
+                    
+                    Cell target = new Cell(Integer.parseInt(in.readLine()),
+                                           Integer.parseInt(in.readLine()));
                     
                     player.processResult(result, target);
                     board.updateHitMissGrid(result, target);
+                    
+                    /* let the server know we are done processing our results.
+                     * Opponent can now take a turn.
+                     */
+                    out.println(CLIENT_READY);
                     
                     if(result == Player.ALL_SHIPS_SUNK)
                         promptForSecondGame(true);
@@ -270,6 +281,8 @@ class Controller {
                 else if(messageType.equals(PLAY_AGAIN)) {
                     wantsToPlayAgain();
                 }
+                else if(messageType.equals(CLIENT_READY))
+                    board.toggleBoard(true);
                 
             }
             catch(Exception e) {
@@ -289,11 +302,12 @@ class Controller {
       Object [] options = {"Play Again", "Quit"};
 
       int option = JOptionPane.showOptionDialog(null, message, "Game Over", 
-                   JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE,
-                   null, options, null);
+                                                JOptionPane.YES_NO_OPTION, 
+                                                JOptionPane.QUESTION_MESSAGE,
+                                                null, options, null);
 
       if(option == JOptionPane.YES_OPTION) {
-          socketOut.println(PLAY_AGAIN);
+          out.println(PLAY_AGAIN);
           board.toConsole("Waiting for opponent to confirm second game...");
       }
       else
@@ -305,12 +319,12 @@ class Controller {
         board.toConsole("Starting another game.");
         board.clearTheBoard();
         board.setBoardConfigController(new BoardConfigController());
-        player = new User(player.getGridSize());
+        player = new User(player.getUserName(), player.getGridSize());
     }
     
     private void sendGoodByeMessage() {
         
-        socketOut.println(GOODBYE);
+        out.println(GOODBYE);
         board.toConsole("A player closed the connecttion. Goodbye.");
         cleanUpAndExit();
     }
@@ -319,8 +333,8 @@ class Controller {
         
         try {
             
-            socketIn.close();
-            socketOut.close();
+            in.close();
+            out.close();
             server.close();
             board.dispose();
             

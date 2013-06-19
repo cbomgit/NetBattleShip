@@ -10,6 +10,7 @@ import java.awt.GridLayout;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import javax.swing.*;
+import javax.swing.text.DefaultCaret;
 /**
  *
  * @author Christian
@@ -24,6 +25,7 @@ class GameBoard extends JFrame{
     private JTextArea       console;
     private int             gridSize;
     private JScrollPane     consoleScrollPane;
+    private String          opponentName;
     
     public GameBoard(int theSize){
         
@@ -42,7 +44,7 @@ class GameBoard extends JFrame{
 
               shipGrid[x][y].removeMouseListener(old);
               shipGrid[x][y].setEnabled(false);
-              hitMissGrid[x][y].setEnabled(true);
+              hitMissGrid[x][y].setEnabled(false);
               hitMissGrid[x][y].addMouseListener(newListener);
            }
     }
@@ -75,9 +77,11 @@ class GameBoard extends JFrame{
     
     private void createConsoleArea() {
         
-        consoleScrollPane = new javax.swing.JScrollPane();
-        console = new javax.swing.JTextArea();
-
+        consoleScrollPane = new JScrollPane();
+        console = new JTextArea();
+        DefaultCaret caret = (DefaultCaret) console.getCaret();
+        caret.setUpdatePolicy( DefaultCaret.ALWAYS_UPDATE);
+        
         console.setEditable(false);
         console.setBackground(new java.awt.Color(0, 0, 0));
         console.setColumns(100);
@@ -85,7 +89,6 @@ class GameBoard extends JFrame{
         console.setForeground(new java.awt.Color(0, 255, 0));
         console.setRows(8);
         consoleScrollPane.setViewportView(console);
-        consoleScrollPane.setAutoscrolls(true);
         consoleScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         consoleScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
     }
@@ -167,9 +170,9 @@ class GameBoard extends JFrame{
         else{
             hitMissGrid[target.x][target.y].setBackground(Color.RED);
             if(result == Player.HIT)
-                toConsole("You damaged CPU's ship at " + target.x + ", " + target.y);
+                toConsole("You damaged " + opponentName + "'s ship at " + target.x + ", " + target.y);
             else
-                toConsole("You sunk CPU's " + Ship.shipName(result));
+                toConsole("You sunk " + opponentName + "'s " + Ship.shipName(result));
         }
         
         
@@ -179,14 +182,14 @@ class GameBoard extends JFrame{
     public void updateShipGrid(int result, Cell target) {
         if(result == User.MISS){
             shipGrid[target.x][target.y].setBackground(Color.WHITE);
-            toConsole("CPU missed at " + target.x + ", " + target.y);
+            toConsole(opponentName + " missed at " + target.x + ", " + target.y);
         }
         else{
             shipGrid[target.x][target.y].setBackground(Color.RED);
             if(result == Player.HIT)
-                toConsole("CPU damaged your ship at " + target.x + ", " + target.y);
+                toConsole(opponentName + " damaged your ship at " + target.x + ", " + target.y);
             else
-                toConsole("CPU sunk your " + Ship.shipName(result));
+                toConsole(opponentName + " sunk your " + Ship.shipName(result));
         }
         
         
@@ -235,6 +238,11 @@ class GameBoard extends JFrame{
       
       toConsole(SETUP_INSTRUCTION);
    }
+
+    public void setOpponentName(String opponent) {
+        
+        opponentName = opponent;
+    }
     
     private static class GridButton extends JButton {
     

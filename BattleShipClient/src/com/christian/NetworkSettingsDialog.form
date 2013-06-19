@@ -58,7 +58,7 @@
                       <Component id="jLabel2" min="-2" max="-2" attributes="0"/>
                       <Component id="jLabel3" alignment="0" min="-2" max="-2" attributes="0"/>
                       <Component id="jLabel4" alignment="0" min="-2" max="-2" attributes="0"/>
-                      <Component id="userNameTextArea" alignment="0" pref="257" max="32767" attributes="0"/>
+                      <Component id="hostNameTextArea" alignment="0" pref="257" max="32767" attributes="0"/>
                       <Component id="serverIpTextArea" alignment="0" max="32767" attributes="0"/>
                       <Component id="portNumberTextArea" alignment="0" max="32767" attributes="0"/>
                   </Group>
@@ -73,7 +73,7 @@
                   <EmptySpace max="-2" attributes="0"/>
                   <Component id="jLabel2" min="-2" max="-2" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
-                  <Component id="userNameTextArea" min="-2" max="-2" attributes="0"/>
+                  <Component id="hostNameTextArea" min="-2" max="-2" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
                   <Component id="jLabel3" min="-2" max="-2" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
@@ -112,7 +112,7 @@
             <Property name="text" type="java.lang.String" value="User name: "/>
           </Properties>
         </Component>
-        <Component class="javax.swing.JTextField" name="userNameTextArea">
+        <Component class="javax.swing.JTextField" name="hostNameTextArea">
           <Events>
             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="ConfigButtonListener"/>
           </Events>

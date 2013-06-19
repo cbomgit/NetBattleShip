@@ -9,10 +9,16 @@ package com.christian;
  class User extends Player {
     
    
-    User(int theSize){
+    private String username;
+    
+    User(String name, int theSize){
         super(theSize);
+        username = name;
     }
    
+    public String getUserName() {
+        return username;
+    }
     //updates the users hit/miss grid with the results of the 
     //last attempt.
    @Override

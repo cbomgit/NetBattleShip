@@ -43,7 +43,7 @@ public class NetworkSettingsDialog extends javax.swing.JFrame {
         configCancelButton = new javax.swing.JButton();
         configDoneButton = new javax.swing.JButton();
         jLabel2 = new javax.swing.JLabel();
-        userNameTextArea = new javax.swing.JTextField();
+        hostNameTextArea = new javax.swing.JTextField();
         jLabel3 = new javax.swing.JLabel();
         serverIpTextArea = new javax.swing.JTextField();
         jLabel4 = new javax.swing.JLabel();
@@ -59,7 +59,7 @@ public class NetworkSettingsDialog extends javax.swing.JFrame {
 
         jLabel2.setText("User name: ");
 
-        userNameTextArea.addActionListener(new java.awt.event.ActionListener() {
+        hostNameTextArea.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 ConfigButtonListener(evt);
             }
@@ -84,7 +84,7 @@ public class NetworkSettingsDialog extends javax.swing.JFrame {
                     .addComponent(jLabel2)
                     .addComponent(jLabel3)
                     .addComponent(jLabel4)
-                    .addComponent(userNameTextArea, javax.swing.GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
+                    .addComponent(hostNameTextArea, javax.swing.GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
                     .addComponent(serverIpTextArea)
                     .addComponent(portNumberTextArea))
                 .addGap(0, 0, Short.MAX_VALUE))
@@ -96,7 +96,7 @@ public class NetworkSettingsDialog extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jLabel2)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(userNameTextArea, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(hostNameTextArea, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jLabel3)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -145,7 +145,8 @@ public class NetworkSettingsDialog extends javax.swing.JFrame {
             public void actionPerformed(ActionEvent ae) {
                 
                 
-                listener.initClient(serverIpTextArea.getText(), 
+                listener.initClient(hostNameTextArea.getText(), 
+                                    serverIpTextArea.getText(), 
                                 Integer.parseInt(portNumberTextArea.getText()));
                 dispose();
             }
@@ -166,6 +167,7 @@ public class NetworkSettingsDialog extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton configCancelButton;
     private javax.swing.JButton configDoneButton;
+    private javax.swing.JTextField hostNameTextArea;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
@@ -173,6 +175,5 @@ public class NetworkSettingsDialog extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel1;
     private javax.swing.JTextField portNumberTextArea;
     private javax.swing.JTextField serverIpTextArea;
-    private javax.swing.JTextField userNameTextArea;
     // End of variables declaration//GEN-END:variables
 }

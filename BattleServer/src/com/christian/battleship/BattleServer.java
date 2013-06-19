@@ -86,9 +86,7 @@ public class BattleServer {
                 System.out.println("\nConnected to client:");
                 System.out.println(socketTwo.getInetAddress());
                 System.out.println(socketTwo.getPort());
-                
-                socketTwoOut = new PrintWriter(
-                                           socketTwo.getOutputStream(), true);
+               
                 
                 socketOneOut.println(ALL_OPPONENTS_READY);
                 socketTwoOut.println(ALL_OPPONENTS_READY);
@@ -136,16 +134,25 @@ public class BattleServer {
         
     }
     
-    public static void killGame(int i) {
-        
-        (games.get(i)).kill();
-                        
+    public static void killGame(int i)  {
+                                
         try { 
+            (games.get(i)).kill();
             (games.get(i)).join();
             games.remove(i);
         }
-
-        catch(InterruptedException e) { }
+        catch(InterruptedException e) { 
+            
+        }
+        catch(IOException e) {
+            System.out.println(e);
+        }
+    }
+    
+    public static void ls() {
+        for(GameThread game : games) {
+            System.out.println(game);
+        }
     }
     
     private static class AdminThread extends Thread {
@@ -162,21 +169,15 @@ public class BattleServer {
             while(!"exit".equals(input)) {
                 
                 if(input.equals("ls"))
-                    System.out.println(games.size() + " games currently running");
+                    ls();
                 else if(input.equals("kill")) {
-                    System.out.println("Kill what game? [0 - " + games.size() + "]");
-                    if(in.hasNextInt()) {
-                        int game = in.nextInt();
-                        (games.get(game)).kill();
-                        
-                        try { 
-                            (games.get(game)).join();
-                            games.remove(game);
-                        }
-                        
-                        catch(InterruptedException e) { }
-                    }
+                    
+                    System.out.println("Kill what game? [0 - " + (games.size() - 1) + "]");
+                    if(in.hasNextInt()) 
+                        killGame(in.nextInt());
+                    
                 }
+                
                 System.out.print("[BattleShipServer@localhost]$ ");
                 if(in.hasNextLine())
                     input = in.nextLine();

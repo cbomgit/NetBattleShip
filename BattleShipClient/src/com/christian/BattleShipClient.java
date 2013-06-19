@@ -33,11 +33,13 @@ public class BattleShipClient implements ClientInitListener {
     }
 
     @Override
-    public void initClient(final String serverAddr, final int serverPort) {
+    public void initClient(final String hostName, final String serverAddr, 
+                           final int serverPort) {
     
         /* first step is to show the gui */
-        final GameBoard gameBoard = new GameBoard(11);
+        final GameBoard gameBoard = new GameBoard(Controller.DEFAULT_GRID_SIZE);
         gameBoard.setVisible(true);
+        gameBoard.toConsole("Hello " + hostName);
         gameBoard.toConsole("Connecting to server...");
         
         SwingWorker socketWorker = new SwingWorker<Socket, Integer>() {
@@ -64,17 +66,17 @@ public class BattleShipClient implements ClientInitListener {
                             (socket.getInputStream()));
                     
                     int messageCode = Integer.parseInt(in.readLine());
-                    String controlFlag = Controller.DEFENSE;
+                    String controlFlag = Controller.GO_SECOND;
                     
                     if(messageCode == WAITING_CODE) {
                         gameBoard.toConsole("Waiting for opponent...");
                         messageCode = Integer.parseInt(in.readLine());
-                        controlFlag = Controller.OFFENSE;
+                        controlFlag = Controller.GO_FIRST;
                     }
 
                     if(messageCode == ALL_OPPONENTS_READY) {
-                        new Controller(controlFlag, socket, gameBoard, 11);
-                        gameBoard.toConsole("All opponents ready!!!");
+                        
+                        new Controller(hostName, controlFlag, socket, gameBoard);
                     }
                     else if(messageCode == ERROR_CODE){
                         //get the error message
