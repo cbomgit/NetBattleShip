@@ -2,10 +2,9 @@ package com.christian;
 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.Socket;
 import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
@@ -22,8 +21,8 @@ class Controller {
     
     //socket and io streams needed to talk to server
     private Socket                  server;
-    private PrintWriter             out;
-    private BufferedReader          in;
+    private DataOutputStream        out;
+    private DataInputStream         in;
     private SocketWorker            socketWorker;
     
     private String                  controlFlag;
@@ -51,13 +50,12 @@ class Controller {
         server = socket;
         
         try {
-            out = new PrintWriter(server.getOutputStream(), true);
-            in  = new BufferedReader(
-                        new InputStreamReader(server.getInputStream()));
+            out = new DataOutputStream(server.getOutputStream());
+            in  = new DataInputStream(server.getInputStream());
             
             //exchange user names 
-            out.println(player.getUserName());
-            String opponent = in.readLine();
+            out.writeUTF(player.getUserName());
+            String opponent = in.readUTF();
             
             board.setOpponentName(opponent);
             board.toConsole(opponent + " wants to play.");
@@ -89,9 +87,15 @@ class Controller {
                 
                 board.toggleBoard(false);
                 
+                try {
                 //send the guess to the opponent. 
-                out.println(target.x);
-                out.println(target.y);
+                out.writeInt(target.x);
+                out.writeInt(target.y);
+                                                                                        System.out.println("Send guess " + target.x + ", " + target.y);
+                }
+                catch(IOException e) {
+                    System.out.println(e);
+                }
                 
                 //the socketinputthread should handle the rest
             }
@@ -162,7 +166,12 @@ class Controller {
                     board.setMainController(this, new MainGameController());
                     
                     //let the server know we are ready
-                    out.println(CLIENT_READY);
+                    try {
+                    out.writeUTF(CLIENT_READY);
+                    }
+                    catch(IOException exception) {
+                        exception.printStackTrace();
+                    }
                     (socketWorker = new SocketWorker()).execute();
                     
                     
@@ -241,36 +250,34 @@ class Controller {
             try {
                 
                 
-                String messageType = in.readLine();
-                System.out.println(messageType);
+                String messageType = in.readUTF();
                 
                 if(messageType.equals(ATTACK)) {
                     
-                    Cell target = new Cell(Integer.parseInt(in.readLine()),
-                                           Integer.parseInt(in.readLine()));                    
-                                         
+                    Cell target = new Cell(in.readInt(), in.readInt());                    
+                                                                                    System.out.println("Attacked @ " + target.x + "," + target.y);
                     int result = player.opponentGuessedHere(target);
                     board.updateShipGrid(result, target);
                     
-                    out.println(result);
-                                        
+                    out.writeInt(result);
+                                                                                    System.out.println("Returning result " + Player.resultString(result));
                     if(result == Player.ALL_SHIPS_SUNK)
                         promptForSecondGame(false);
                 }
                 else if(messageType.equals(RESULT)) {
                     
-                    int result = Integer.parseInt(in.readLine());
+                    int result = in.readInt();
                     
-                    Cell target = new Cell(Integer.parseInt(in.readLine()),
-                                           Integer.parseInt(in.readLine()));
-                    
+                    Cell target = new Cell(in.readInt(), in.readInt());
+                                                                                    System.out.print("Recieved result " + Player.resultString(result));
+                                                                                    System.out.println(" for guess " + target.x + ", " + target.y);
                     player.processResult(result, target);
                     board.updateHitMissGrid(result, target);
                     
                     /* let the server know we are done processing our results.
                      * Opponent can now take a turn.
                      */
-                    out.println(CLIENT_READY);
+                    out.writeUTF(CLIENT_READY);
                     
                     if(result == Player.ALL_SHIPS_SUNK)
                         promptForSecondGame(true);
@@ -307,7 +314,7 @@ class Controller {
                                                 null, options, null);
 
       if(option == JOptionPane.YES_OPTION) {
-          out.println(PLAY_AGAIN);
+          out.writeUTF(PLAY_AGAIN);
           board.toConsole("Waiting for opponent to confirm second game...");
       }
       else
@@ -322,9 +329,9 @@ class Controller {
         player = new User(player.getUserName(), player.getGridSize());
     }
     
-    private void sendGoodByeMessage() {
+    private void sendGoodByeMessage() throws IOException{
         
-        out.println(GOODBYE);
+        out.writeUTF(GOODBYE);
         board.toConsole("A player closed the connecttion. Goodbye.");
         cleanUpAndExit();
     }

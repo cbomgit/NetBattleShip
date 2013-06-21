@@ -4,8 +4,8 @@
  */
 package com.christian.battleship;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -58,8 +58,8 @@ public class BattleServer {
         
         Socket socketOne = null;
         Socket socketTwo = null;
-        PrintWriter socketOneOut = null;
-        PrintWriter socketTwoOut = null;
+        DataOutputStream socketOneOut = null;
+        DataOutputStream socketTwoOut = null;
         
         while(listening) {
             
@@ -72,9 +72,8 @@ public class BattleServer {
             System.out.println(socketOne.getPort());
             
             //we'll want to communicate with the connected client
-            socketOneOut = new PrintWriter(
-                                       socketOne.getOutputStream(), true);
-            socketOneOut.println(WAITING_CODE);
+            socketOneOut = new DataOutputStream(socketOne.getOutputStream());
+            socketOneOut.writeInt(WAITING_CODE);
             
             //set a timeout for the opponent to connect
             serverSocket.setSoTimeout(CLIENT_TIMEOUT); //only 
@@ -82,18 +81,19 @@ public class BattleServer {
             try {
                 //wait for a connection from the opponent
                 socketTwo = serverSocket.accept();
+                socketTwoOut = new DataOutputStream(socketTwo.getOutputStream());
                 
                 System.out.println("\nConnected to client:");
                 System.out.println(socketTwo.getInetAddress());
                 System.out.println(socketTwo.getPort());
                
                 
-                socketOneOut.println(ALL_OPPONENTS_READY);
-                socketTwoOut.println(ALL_OPPONENTS_READY);
+                socketOneOut.writeInt(ALL_OPPONENTS_READY);
+                socketTwoOut.writeInt(ALL_OPPONENTS_READY);
                 
                 
                 //since we have two clients, we can start a game
-                GameThread newGame = new GameThread(games.size() + 1, socketOne, socketTwo);   
+                GameThread newGame = new GameThread(games.size(), socketOne, socketTwo);   
                 games.add(newGame);
                 newGame.start();
                 System.out.println("Started a game.Going back to listening now");
@@ -102,8 +102,8 @@ public class BattleServer {
             catch(SocketTimeoutException e) {
                 
                 //send message to client that connection to opponent timed out
-                socketOneOut.println(ERROR_CODE);
-                socketOneOut.println("Timed out waiting for opponent.\n");
+                socketOneOut.writeInt(ERROR_CODE);
+                socketOneOut.writeUTF("Timed out waiting for opponent.\n");
                 socketOneOut.close();
                 if(socketOne != null)
                     socketOne.close(); //close the socket
@@ -134,6 +134,22 @@ public class BattleServer {
         
     }
     
+    private static void kill(Scanner in) {
+        
+        if(games.isEmpty())
+            System.out.println("No games are running.");
+        else {
+            int gameId = -1;
+            if(in.hasNextInt())
+                gameId = in.nextInt();
+            
+            if(gameId >= 0 && gameId < games.size())
+                killGame(gameId);
+            else
+                System.out.println("Could not kill game thread with id " + gameId);
+        }
+    }
+    
     public static void killGame(int i)  {
                                 
         try { 
@@ -150,6 +166,8 @@ public class BattleServer {
     }
     
     public static void ls() {
+        System.out.println(games.size() + " game(s) currently running");
+        
         for(GameThread game : games) {
             System.out.println(game);
         }
@@ -171,14 +189,12 @@ public class BattleServer {
                 if(input.equals("ls"))
                     ls();
                 else if(input.equals("kill")) {
-                    
-                    System.out.println("Kill what game? [0 - " + (games.size() - 1) + "]");
-                    if(in.hasNextInt()) 
-                        killGame(in.nextInt());
-                    
+                    ls();
+                    System.out.println("Enter id of game to kill: ");
+                    kill(in);
                 }
                 
-                System.out.print("[BattleShipServer@localhost]$ ");
+                System.out.print(" BattleShipServer@localhost $ ");
                 if(in.hasNextLine())
                     input = in.nextLine();
             }

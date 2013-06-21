@@ -5,9 +5,8 @@
 package com.christian;
 
 import java.awt.EventQueue;
-import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import javax.swing.SwingWorker;
@@ -21,9 +20,7 @@ public class BattleShipClient implements ClientInitListener {
     private static final int ERROR_CODE          =    -1;
     private static final int WAITING_CODE        =     0;
     private static final int ALL_OPPONENTS_READY =     1;
-    
-    private Socket           socket;
-    
+        
     public static void main(String[] args) {
         
         /* Create and display the form */
@@ -46,10 +43,11 @@ public class BattleShipClient implements ClientInitListener {
 
             @Override
             protected Socket doInBackground() throws Exception {
-                                
+                     
+                Socket socket = null;
                 try {
                     //attempt to connect to the server
-                    Socket socket = new Socket(serverAddr, serverPort);
+                    socket = new Socket(serverAddr, serverPort);
                     
                     gameBoard.toConsole("Connection successful!!");
                     gameBoard.toConsole("Waiting for opponent...");
@@ -62,15 +60,14 @@ public class BattleShipClient implements ClientInitListener {
                      * is also the possibility that the 
                      */
                     
-                    BufferedReader in = new BufferedReader(new InputStreamReader
-                            (socket.getInputStream()));
+                    DataInputStream in = new DataInputStream(socket.getInputStream());
                     
-                    int messageCode = Integer.parseInt(in.readLine());
+                    int messageCode = in.readInt();
                     String controlFlag = Controller.GO_SECOND;
                     
                     if(messageCode == WAITING_CODE) {
                         gameBoard.toConsole("Waiting for opponent...");
-                        messageCode = Integer.parseInt(in.readLine());
+                        messageCode = in.readInt();
                         controlFlag = Controller.GO_FIRST;
                     }
 
@@ -80,7 +77,7 @@ public class BattleShipClient implements ClientInitListener {
                     }
                     else if(messageCode == ERROR_CODE){
                         //get the error message
-                        gameBoard.toConsole(in.readLine());
+                        gameBoard.toConsole(in.readUTF());
                     }
                     
                 }

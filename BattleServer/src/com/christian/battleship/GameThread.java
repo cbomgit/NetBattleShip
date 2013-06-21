@@ -4,10 +4,9 @@
  */
 package com.christian.battleship;
 
-import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.Socket;
 
 /**
@@ -25,11 +24,11 @@ class GameThread extends Thread {
     private Socket                  playerTwoSocket;
     
     //io streams for each socket
-    private BufferedReader          sockOneIn;
-    private BufferedReader          sockTwoIn;
+    private DataInputStream         sockOneIn;
+    private DataInputStream         sockTwoIn;
     
-    private PrintWriter             sockOneOut;
-    private PrintWriter             sockTwoOut;
+    private DataOutputStream        sockOneOut;
+    private DataOutputStream        sockTwoOut;
     
     private static final String     CLIENT_READY      =  "Ready to play";
     private static final String     ATTACK            =  "Attack";
@@ -55,8 +54,8 @@ class GameThread extends Thread {
     
     public void kill() throws IOException{
         //send goodbye messages to the clients and kill the game
-        sockOneOut.println(GOODBYE);
-        sockTwoOut.println(GOODBYE);
+        sockOneOut.writeUTF(GOODBYE);
+        sockTwoOut.writeUTF(GOODBYE);
         playing = false;
         cleanup();
     }
@@ -66,27 +65,25 @@ class GameThread extends Thread {
         
         try {
             
-            sockOneIn = new BufferedReader(
-                        new InputStreamReader(playerOneSocket.getInputStream()));
+            sockOneIn = new DataInputStream(playerOneSocket.getInputStream());
 
-            sockTwoIn = new BufferedReader(
-                        new InputStreamReader(playerTwoSocket.getInputStream()));
+            sockTwoIn = new DataInputStream(playerTwoSocket.getInputStream());
 
-            sockOneOut = new PrintWriter(playerOneSocket.getOutputStream(), true);
-            sockTwoOut = new PrintWriter(playerTwoSocket.getOutputStream(), true);
+            sockOneOut = new DataOutputStream(playerOneSocket.getOutputStream());
+            sockTwoOut = new DataOutputStream(playerTwoSocket.getOutputStream());
             
             //exchange of host names
-            String host1 = sockOneIn.readLine();
-            String host2 = sockTwoIn.readLine();
-            sockOneOut.println(host2);
-            sockTwoOut.println(host1);
+            String host1 = sockOneIn.readUTF();
+            String host2 = sockTwoIn.readUTF();
+            sockOneOut.writeUTF(host2);
+            sockTwoOut.writeUTF(host1);
             
             /* at this point both clients should be setting up their boards,
              * so the server should wait for READY messages on both sockets.
              */
             
-            System.out.println(sockOneIn.readLine());
-            System.out.println(sockTwoIn.readLine());
+            System.out.println(sockOneIn.readUTF());
+            System.out.println(sockTwoIn.readUTF());
                               
         /*now run the game loop */
         
@@ -117,32 +114,32 @@ class GameThread extends Thread {
         }
     }
     
-    private void processOneTurn(BufferedReader offenseIn, PrintWriter offenseOut,
-                                BufferedReader defenseIn, PrintWriter defenseOut) {
+    private void processOneTurn(DataInputStream offenseIn, DataOutputStream offenseOut,
+                                DataInputStream defenseIn, DataOutputStream defenseOut) {
         
         try {
             //get a guess from the attacking player
-            int x = Integer.parseInt(offenseIn.readLine());
-            int y = Integer.parseInt(offenseIn.readLine());
+            int x = offenseIn.readInt();
+            int y = offenseIn.readInt();
             
             //send the guess to the opponent
-            defenseOut.println(ATTACK);
-            defenseOut.println(x);
-            defenseOut.println(y);
+            defenseOut.writeUTF(ATTACK);
+            defenseOut.writeInt(x);
+            defenseOut.writeInt(y);
             
             //get the result from the opponent
-            int result = Integer.parseInt(defenseIn.readLine());
+            int result = defenseIn.readInt();
             
             //send the result back to the attacking player, with the original guess
-            offenseOut.println(RESULT);
-            offenseOut.println(result);
-            offenseOut.println(x);
-            offenseOut.println(y);
+            offenseOut.writeUTF(RESULT);
+            offenseOut.writeInt(result);
+            offenseOut.writeInt(x);
+            offenseOut.writeInt(y);
             
             //wait for the attacking player to finish processing the result
             //and then let the opponent know it can now take a turn
-            if(offenseIn.readLine().equals(CLIENT_READY))
-                defenseOut.println(CLIENT_READY);
+            if(offenseIn.readUTF().equals(CLIENT_READY))
+                defenseOut.writeUTF(CLIENT_READY);
             
             //if attacking player won the game, the server will try and 
             //set up a new game
@@ -154,12 +151,12 @@ class GameThread extends Thread {
                 String p2reply = defenseIn.readLine();
                 
                 if(p1reply.equals(PLAY_AGAIN) && p2reply.equals(PLAY_AGAIN)) {
-                    offenseOut.println(PLAY_AGAIN);
-                    defenseOut.println(PLAY_AGAIN);
-                    offenseOut.println(DEFENSE);
-                    defenseOut.println(OFFENSE);
-                    System.out.println(offenseIn.readLine());
-                    System.out.println(defenseIn.readLine());
+                    offenseOut.writeUTF(PLAY_AGAIN);
+                    defenseOut.writeUTF(PLAY_AGAIN);
+                    offenseOut.writeUTF(DEFENSE);
+                    defenseOut.writeUTF(OFFENSE);
+                    System.out.println(offenseIn.readUTF());
+                    System.out.println(defenseIn.readUTF());
                 }
                 else 
                     playing = false;

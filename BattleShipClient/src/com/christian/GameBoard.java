@@ -15,7 +15,7 @@ import javax.swing.text.DefaultCaret;
  *
  * @author Christian
  */
-class GameBoard extends JFrame{
+class GameBoard extends JFrame {
    
     private static final String SETUP_INSTRUCTION = "Left-Click for vertical ship.\n"
             + "Right-Click for horizontal ship.";

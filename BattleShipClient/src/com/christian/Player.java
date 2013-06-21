@@ -43,6 +43,23 @@ abstract class Player {
 
        createShips();
    }
+   
+   public static String resultString(int resultCode) {
+       
+       switch (resultCode){
+           
+           case ALL_SHIPS_SUNK : 
+               return "All ships sunk";
+           case SHIP_SUNK : 
+               return "Ship sunk";
+           case HIT : 
+               return "Hit";
+           case MISS :
+               return "Miss";
+           default :
+               return "Default";
+       }
+   }
 
    /**
     * create the player's ships.
